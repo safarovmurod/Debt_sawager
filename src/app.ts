@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import swaggerUi from 'swagger-ui-express';
 import { env } from './config/env';
 import { openapiSpec } from './docs/openapi';
 import { notFound, errorHandler } from './middleware/error';
@@ -26,25 +25,48 @@ export function createApp() {
     next();
   });
 
-  // Root redirect to /docs
-  app.get('/', (_req, res) => res.redirect('/docs'));
+  const swaggerHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Debt Tracker API Docs</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui.min.css" />
+  <style>
+    body { margin: 0; background: #fafafa; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .topbar { display: none !important; }
+  </style>
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-bundle.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-standalone-preset.js"></script>
+  <script>
+    window.onload = function() {
+      window.ui = SwaggerUIBundle({
+        url: '/docs.json',
+        dom_id: '#swagger-ui',
+        deepLinking: true,
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset
+        ],
+        layout: "BaseLayout",
+        docExpansion: "list"
+      });
+    };
+  </script>
+</body>
+</html>`;
 
-  // API docs (mounted before helmet so its CSP doesn't block Swagger UI assets).
+  // API docs
   app.get('/docs.json', (_req, res) => res.json(openapiSpec));
-  app.use(
-    '/docs',
-    swaggerUi.serve,
-    swaggerUi.setup(openapiSpec, {
-      customSiteTitle: 'Debt Tracker API Docs',
-      customCssUrl: 'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui.min.css',
-      customJs: [
-        'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-bundle.js',
-        'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-standalone-preset.js',
-      ],
-    })
-  );
+  app.get(['/', '/docs', '/docs/'], (_req, res) => {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(swaggerHtml);
+  });
 
-  app.use(helmet());
+  app.use(helmet({ contentSecurityPolicy: false }));
   app.use(
     cors({ origin: env.CORS_ORIGIN === '*' ? true : env.CORS_ORIGIN.split(',') })
   );
