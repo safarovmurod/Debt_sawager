@@ -7,9 +7,15 @@ import { env } from './env';
 // precision you would keep it as a string and use a decimal library.
 types.setTypeParser(1700, (val: string) => parseFloat(val));
 
+const useSsl =
+  env.PGSSL ||
+  env.DATABASE_URL.includes('sslmode=require') ||
+  env.DATABASE_URL.includes('neon.tech') ||
+  env.DATABASE_URL.includes('supabase.co');
+
 export const pool = new Pool({
-  connectionString: env.DATABASE_URL,
-  ssl: env.PGSSL ? { rejectUnauthorized: false } : undefined,
+  connectionString: env.DATABASE_URL || undefined,
+  ssl: useSsl ? { rejectUnauthorized: false } : undefined,
 });
 
 /** Run a query and return all rows. */

@@ -17,6 +17,15 @@ import dashboardRoutes from './modules/dashboard/dashboard.routes';
 export function createApp() {
   const app = express();
 
+  // Support Vercel serverless rewritten path
+  app.use((req, _res, next) => {
+    const matchedPath = req.headers['x-matched-path'] as string;
+    if (matchedPath && req.url !== matchedPath) {
+      req.url = matchedPath;
+    }
+    next();
+  });
+
   // Root redirect to /docs
   app.get('/', (_req, res) => res.redirect('/docs'));
 
