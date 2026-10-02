@@ -17,12 +17,22 @@ import dashboardRoutes from './modules/dashboard/dashboard.routes';
 export function createApp() {
   const app = express();
 
+  // Root redirect to /docs
+  app.get('/', (_req, res) => res.redirect('/docs'));
+
   // API docs (mounted before helmet so its CSP doesn't block Swagger UI assets).
   app.get('/docs.json', (_req, res) => res.json(openapiSpec));
   app.use(
     '/docs',
     swaggerUi.serve,
-    swaggerUi.setup(openapiSpec, { customSiteTitle: 'Debt Tracker API Docs' })
+    swaggerUi.setup(openapiSpec, {
+      customSiteTitle: 'Debt Tracker API Docs',
+      customCssUrl: 'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui.min.css',
+      customJs: [
+        'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-bundle.js',
+        'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-standalone-preset.js',
+      ],
+    })
   );
 
   app.use(helmet());
